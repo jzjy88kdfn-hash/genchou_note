@@ -1,5 +1,5 @@
-const CACHE='genchou-note-v4';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg'];
+const CACHE='genchou-note-v5';
+const ASSETS=['./','./index.html','./style.css','./app.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
@@ -9,12 +9,5 @@ self.addEventListener('activate',event=>{
 });
 self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET')return;
-  event.respondWith(
-    caches.open(CACHE).then(cache=>
-      globalThis.fetch(event.request).then(response=>{
-        cache.put(event.request,response.clone());
-        return response;
-      }).catch(()=>cache.match(event.request).then(found=>found||cache.match('./index.html')))
-    )
-  );
+  event.respondWith(caches.match(event.request).then(found=>found||fetch(event.request).then(response=>response).catch(()=>caches.match('./index.html'))));
 });
