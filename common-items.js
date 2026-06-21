@@ -1,0 +1,120 @@
+const GLOBAL_ITEM_STORE='genchou_note_global_items_v1';
+const FAVORITE_ITEM_STORE='genchou_note_favorite_item_ids_v1';
+function giUid(){return 'g_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function loadGlobalItems(){
+  let list=[];
+  try{list=JSON.parse(localStorage.getItem(GLOBAL_ITEM_STORE)||'[]')}catch(e){}
+  if(!Array.isArray(list))list=[];
+  if(!list.length){
+    list=[
+      {id:giUid(),name:'外壁',unit:'㎡',group:'外壁',memo:'縦×横、長さ×高さ、四周計算対応'},
+      {id:giUid(),name:'屋根',unit:'㎡',group:'屋根',memo:'長さ×奥行き等'},
+      {id:giUid(),name:'軒天',unit:'㎡',group:'外壁',memo:'縦×横'},
+      {id:giUid(),name:'四周壁',unit:'㎡',group:'外壁',memo:'（長さ＋奥行き）×2×高さ'},
+      {id:giUid(),name:'シーリング',unit:'m',group:'シーリング',memo:'長さ×同寸法、控除'},
+      {id:giUid(),name:'鉄部',unit:'㎡',group:'鉄部',memo:'面積拾い'},
+      {id:giUid(),name:'鉄部小物',unit:'箇所',group:'鉄部',memo:'箇所数'},
+      {id:giUid(),name:'雨樋',unit:'m',group:'付帯',memo:'延長'},
+      {id:giUid(),name:'養生',unit:'式',group:'共通',memo:'現場条件により一式'}
+    ];
+    saveGlobalItems(list);
+    saveFavoriteIds(list.map(x=>x.id));
+  }
+  return list;
+}
+function saveGlobalItems(list){localStorage.setItem(GLOBAL_ITEM_STORE,JSON.stringify(list))}
+function loadFavoriteIds(){try{return JSON.parse(localStorage.getItem(FAVORITE_ITEM_STORE)||'[]')}catch(e){return[]}}
+function saveFavoriteIds(ids){localStorage.setItem(FAVORITE_ITEM_STORE,JSON.stringify(ids))}
+function globalItems(){return loadGlobalItems()}
+function favoriteGlobalItems(){const ids=loadFavoriteIds();return globalItems().filter(i=>ids.includes(i.id))}
+function sameItem(a,b){return (a.name||'').trim()===(b.name||'').trim()&&(a.unit||'')===(b.unit||'')&&((a.group||'').trim()===(b.group||'').trim())}
+function ensureGlobalItem(item){
+  if(!item||!item.name||!item.unit)return;
+  const list=globalItems();
+  if(!list.some(x=>sameItem(x,item))){
+    const ni={id:giUid(),name:item.name,unit:item.unit,group:item.group||'',memo:item.memo||''};
+    list.push(ni);saveGlobalItems(list);
+    const fav=loadFavoriteIds();fav.push(ni.id);saveFavoriteIds([...new Set(fav)]);
+  }
+}
+function materializeGlobalItem(globalId){
+  const s=currentSite();if(!s)return null;
+  const gi=globalItems().find(x=>x.id===globalId);if(!gi)return null;
+  const existing=(s.items||[]).find(i=>sameItem(i,gi));
+  if(existing)return existing;
+  const item={id:uid(),name:gi.name,unit:gi.unit,group:gi.group||'',memo:gi.memo||'',createdAt:new Date().toISOString(),fromGlobalId:gi.id};
+  s.items.push(item);s.updatedAt=new Date().toISOString();safeSave();
+  return item;
+}
+const baseCreateItem=window.createItem;
+window.createItem=function(name,unit,group,memo){const item=baseCreateItem(name,unit,group,memo);ensureGlobalItem(item);renderCommonItemsPanel();return item};
+const baseItemById=window.itemById;
+window.itemById=function(id){return baseItemById(id)||globalItems().find(i=>i.id===id)||null};
+const baseOnMeasureItemChange=window.onMeasureItemChange;
+window.onMeasureItemChange=function(){
+  const id=document.getElementById('measureItem')?.value;
+  if(id&&id.startsWith('g_')){
+    const item=window.itemById(id);
+    document.getElementById('selectedUnit').textContent='単位：'+(item?.unit||'-')+' / 共通項目';
+    ['areaFields','lenFields','qtyFields'].forEach(x=>document.getElementById(x).classList.add('hidden'));
+    if(item?.unit==='㎡'){document.getElementById('areaFields').classList.remove('hidden');onAreaModeChange()}
+    else if(item?.unit==='m')document.getElementById('lenFields').classList.remove('hidden');
+    else if(item)document.getElementById('qtyFields').classList.remove('hidden');
+    calcLive();return;
+  }
+  return baseOnMeasureItemChange();
+};
+const baseSaveEntry=window.saveEntry;
+window.saveEntry=function(continueSame){
+  const sel=document.getElementById('measureItem');
+  if(sel&&sel.value&&sel.value.startsWith('g_')){
+    const newItem=materializeGlobalItem(sel.value);
+    if(newItem)sel.value=newItem.id;
+  }
+  return baseSaveEntry(continueSame);
+};
+const baseRenderMeasure=window.renderMeasure;
+window.renderMeasure=function(){
+  const s=currentSite();
+  document.getElementById('noSiteMeasure').classList.toggle('hidden',!!s);
+  document.getElementById('measureForm').classList.toggle('hidden',!s);
+  const sel=document.getElementById('measureItem');
+  const val=sel.value;sel.innerHTML='';
+  if(s){
+    const faves=favoriteGlobalItems();
+    if(faves.length){
+      const og=document.createElement('optgroup');og.label='よく使う項目';
+      faves.forEach(i=>{const o=document.createElement('option');o.value=i.id;o.textContent=i.name+'（'+i.unit+'）';og.appendChild(o)});
+      sel.appendChild(og);
+    }
+    const siteItems=filteredItems();
+    if(siteItems.length){
+      const og2=document.createElement('optgroup');og2.label='この現場の項目';
+      siteItems.forEach(i=>{const o=document.createElement('option');o.value=i.id;o.textContent=i.name+'（'+i.unit+'）';og2.appendChild(o)});
+      sel.appendChild(og2);
+    }
+    if([...sel.options].some(o=>o.value===val))sel.value=val;
+  }
+  onMeasureItemChange();
+  const box=document.getElementById('entryList');box.innerHTML='';
+  if(!s||!s.entries.length){box.innerHTML='<div class="empty">実測データがありません</div>';return}
+  if(historyCollapsed){box.innerHTML='<div class="empty">履歴を折りたたみ中：'+s.entries.length+'件</div>';return}
+  s.entries.forEach(e=>box.appendChild(entryNode(e)));
+};
+function renderCommonItemsPanel(){
+  let host=document.getElementById('commonItemsPanel');
+  const tools=document.getElementById('view-tools');
+  if(!tools)return;
+  if(!host){
+    host=document.createElement('div');host.id='commonItemsPanel';host.className='card flat';
+    tools.appendChild(host);
+  }
+  const fav=loadFavoriteIds();
+  const list=globalItems();
+  host.innerHTML='<h2><span class="num">3</span>よく使う項目設定</h2><div class="hint">チェックした項目が、全現場の実測画面に表示されます。項目作成時は自動で共通項目にも登録されます。</div><div class="list" style="margin-top:10px">'+list.map(i=>'<label class="itemCard" style="display:flex;gap:10px;align-items:center"><input type="checkbox" class="favItemCheck" value="'+i.id+'" '+(fav.includes(i.id)?'checked':'')+' onchange="saveFavoriteItemSelection()" style="width:auto;min-height:auto"><span><b>'+escapeHtml(i.name)+'（'+i.unit+'）</b><div class="meta">'+escapeHtml(i.group||'分類なし')+' / '+escapeHtml(i.memo||'')+'</div></span></label>').join('')+'</div>';
+}
+function saveFavoriteItemSelection(){const ids=[...document.querySelectorAll('.favItemCheck:checked')].map(x=>x.value);saveFavoriteIds(ids);renderMeasure();showSavedMessage&&showSavedMessage()}
+window.renderCommonItemsPanel=renderCommonItemsPanel;window.saveFavoriteItemSelection=saveFavoriteItemSelection;
+const baseRenderAll=window.renderAll;
+window.renderAll=function(){baseRenderAll();renderCommonItemsPanel()};
+setTimeout(()=>{renderCommonItemsPanel();renderMeasure()},0);
