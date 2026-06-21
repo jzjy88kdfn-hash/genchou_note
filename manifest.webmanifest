@@ -1,0 +1,19 @@
+{
+  "name": "現調台帳",
+  "short_name": "現調台帳",
+  "description": "iPhone現調用の写真・測定・劣化・見積前整理台帳",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f6f3",
+  "theme_color": "#111111",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
