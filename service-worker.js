@@ -1,5 +1,5 @@
-const CACHE='genchou-note-v6';
-const ASSETS=['./','./index.html','./style.css','./save.css','./app.js','./save.js','./manifest.webmanifest','./icon.svg'];
+const CACHE='genchou-note-v7';
+const ASSETS=['./','./index.html','./style.css','./save.css','./app.js','./save.js','./common-items.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
