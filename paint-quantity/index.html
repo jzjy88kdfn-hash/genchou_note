@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head><meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+<meta content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes,viewport-fit=cover" name="viewport"/>
+<meta content="no-referrer" name="referrer"/>
+<meta content="default-src 'self' data: blob:; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; worker-src 'self'; manifest-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" http-equiv="Content-Security-Policy"/>
+<meta content="#0b1220" name="theme-color"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="塗装数量算出" name="application-name"/>
+<meta content="数量算出" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="telephone=no" name="format-detection"/>
+<link href="./manifest.webmanifest" rel="manifest"/>
+<link href="./icons/icon.svg" rel="icon" type="image/svg+xml"/>
+<link href="./icons/icon.svg" rel="apple-touch-icon"/>
+<title>塗装数量算出</title>
+<link href="./app.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="app">
+<header class="topbar" id="topbar">
+<button aria-label="戻る" class="iconbtn hidden" id="backBtn">‹</button>
+<div class="brand">
+<h1 id="headerTitle">塗装数量算出</h1>
+<p id="headerSub">画像から面積・長さ・箇所を拾う</p>
+</div>
+<button aria-label="使い方" class="iconbtn" id="helpBtn">?</button>
+<button aria-label="設定" class="iconbtn" id="settingsBtn">⚙</button>
+</header>
+<main class="main">
+<section class="screen active" id="homeScreen">
+<div class="hero">
+<span class="badge">● 端末内で処理・外部送信なし</span>
+<h2>写真を選んで<br/>数量拾いを開始</h2>
+<p>使用前チェック後、写真を選択し、実寸設定→項目選択→描画→写真完了の順に進みます。保存異常や計測矛盾は確定前に停止します。</p>
+<div aria-label="写真をまとめて選択" class="uploadbox" id="uploadBox" role="button" tabindex="0">
+<div class="plus">＋</div>
+<strong>写真をまとめて選択</strong>
+<span>JPEG・PNG・HEIC／複数枚対応</span>
+</div>
+<input accept="image/*" id="fileInput" multiple="" type="file"/>
+</div>
+<div class="card" id="readinessCard">
+<div class="cardHead">
+<div><h3>使用前チェック</h3><p>保存機能と端末状態を確認してから開始します。</p></div>
+<span class="readinessBadge" id="readinessBadge">確認中</span>
+</div>
+<div aria-live="polite" class="readinessSummary" id="readinessSummary" role="status">端末を確認しています。</div>
+<div class="readinessItems" id="readinessItems"></div>
+<div class="manageGrid" style="margin-top:10px">
+<button class="smallbtn" id="runReadinessBtn">使用前チェックを実行</button>
+<button class="smallbtn" id="deviceDiagnosticHomeBtn">再起動後の保存確認</button>
+</div>
+<div class="backupNotice" id="readinessAdvice">初回はチェックを完了し、作業後に案件バックアップを保存してください。</div>
+</div>
+<div class="card">
+<h3>データ保護</h3>
+<div class="manageGrid">
+<button class="smallbtn" id="importBackupBtn">バックアップから復元</button>
+<button class="smallbtn" id="storageCheckBtn">保存容量を確認</button>
+</div>
+<div class="backupNotice">端末変更・Safariデータ削除に備え、案件ごとにバックアップファイルを保存できます。</div>
+<input accept=".paintbackup,application/json" class="hidden" id="backupInput" type="file"/>
+</div>
+<div class="card">
+<h3>保存中の案件</h3>
+<div class="project-list" id="projectList"><div style="color:var(--muted);font-size:12px;padding:8px 2px">保存中の案件はありません</div></div>
+</div>
+</section>
+<section class="workspace" id="workspace">
+<div class="progressbar"><i id="progressFill"></i></div>
+<div class="canvasWrap" id="canvasWrap">
+<canvas aria-label="写真上で数量を計測する領域" height="2" id="measureCanvas" role="application" width="2"></canvas>
+<div class="canvasEmpty" id="canvasEmpty">画像を読み込み中です</div>
+<div class="zoomBadge" id="zoomBadge">100%</div>
+<div class="saveBadge" id="saveBadge">保存済み</div>
+<div class="qualityBadge" id="qualityStatus">品質目安 —</div>
+</div>
+<div class="toolpanel">
+<div aria-live="polite" class="workflowHint" id="workflowHint" role="status"><b>次：</b>実寸が分かる部分を設定してください。</div>
+<div class="statusline">
+<button class="pill" id="calibrateBtn">① 実寸設定</button>
+<span class="pill" id="scaleStatus">未設定</span>
+<span class="spacer"></span>
+<button class="smallbtn" id="undoBtn">戻す</button>
+<button class="smallbtn" id="redoBtn">やり直し</button>
+</div>
+<div class="imageNav">
+<button class="navbtn" id="prevImageBtn">‹ 前の画像</button>
+<button class="navbtn center" id="imageListBtn">画像一覧</button>
+<button class="navbtn" id="nextImageBtn">次の画像 ›</button>
+</div>
+<div class="categoryrow" id="categoryRow"></div>
+<div class="actiongrid">
+<button class="actionbtn" id="panBtn">移動<br/>拡大</button>
+<button class="actionbtn active" id="drawBtn">描く</button>
+<button class="actionbtn minus" id="minusBtn">開口<br/>控除</button>
+<button class="actionbtn" id="completeShapeBtn">線・面<br/>確定</button>
+<button class="actionbtn finish" id="confirmImageBtn">写真を<br/>完了</button>
+</div>
+</div>
+</section>
+<section class="screen" id="summaryScreen">
+<div class="card">
+<div class="summaryHead">
+<div>
+<div class="muted">案件集計</div>
+<div class="big" id="summaryProjectName">名称未設定</div>
+</div>
+</div>
+</div>
+<div class="card">
+<h3>案件チェック</h3>
+<div aria-live="polite" class="operationStatus warn" id="operationStatus" role="status">全写真の完了後、案件チェックを実行してください。</div>
+<div class="auditGrid">
+<button class="smallbtn" id="finalAuditBtn">案件チェックを実行</button>
+<button class="smallbtn" id="exportCsvBtn">CSV数量表</button>
+<button class="smallbtn" id="printReportBtn">印刷・PDF保存</button>
+<button class="smallbtn" id="exportAuditBtn">チェック履歴</button>
+</div>
+<div class="versionStamp">端末内保存・外部送信なし</div>
+</div>
+<div class="card">
+<h3>カテゴリ別合計</h3>
+<div class="resultGrid" id="resultGrid"></div>
+</div>
+<div class="card imageResults">
+<h3>画像別内訳</h3>
+<div id="imageResults"></div>
+</div>
+<div class="card">
+<button class="smallbtn" id="summaryBackupBtn" style="width:100%;margin-bottom:8px">案件バックアップを保存</button>
+<div class="sheetActions">
+<button class="ghost" id="returnMeasureBtn">計測へ戻る</button>
+<button class="primary" id="newProjectBtn">新しい案件</button>
+</div>
+</div>
+</section>
+</main>
+</div>
+<div class="sheetBackdrop" id="calibrationManagerSheet">
+<div class="sheet">
+<div class="sheetHandle"></div>
+<h2>実寸設定を選択</h2>
+<p>通常は「自動補間」を使用します。特定の壁面へ固定したい場合だけ、登録した実寸設定を選択してください。</p>
+<div class="calibrationWarnings" id="calibrationWarnings"></div>
+<div class="calibrationList" id="calibrationManagerList"></div>
+<div class="calibrationTypeGrid">
+<button class="calibrationTypeBtn" id="addLineCalibrationBtn"><b>＋ 簡易実寸設定</b><span>正面写真向け。実寸が分かる1本をなぞります。</span></button>
+<button class="calibrationTypeBtn" id="addPlaneCalibrationBtn"><b>＋ 斜め写真の実寸設定</b><span>同一平面にある長方形の四隅を指定し、幅と高さで遠近補正します。</span></button>
+</div>
+<div class="sheetActions">
+<button class="ghost" data-close="calibrationManagerSheet">閉じる</button>
+<button class="primary" id="calibrationDoneBtn">設定して戻る</button>
+</div>
+</div>
+</div>
+<div class="sheetBackdrop" id="calibrationSheet">
+<div class="sheet">
+<div class="sheetHandle"></div>
+<h2>簡易較正の実寸</h2>
+<p>画像上でなぞった線の、実際の長さをメートルで入力してください。</p>
+<div class="field">
+<label for="lineCalibrationNameInput">実寸設定の名前</label>
+<input id="lineCalibrationNameInput" maxlength="20" placeholder="例：正面外壁"/>
+</div>
+<div class="field">
+<label for="realLengthInput">実際の長さ（m）</label>
+<input id="realLengthInput" inputmode="decimal" min="0.001" placeholder="例：2.40" step="0.01" type="number"/>
+</div>
+<div class="sheetActions">
+<button class="ghost" data-close="calibrationSheet">取消</button>
+<button class="primary" id="applyCalibrationBtn">実寸設定を保存</button>
+</div>
+</div>
+</div>
+<div class="sheetBackdrop" id="perspectiveCalibrationSheet">
+<div class="sheet">
+<div class="sheetHandle"></div>
+<h2>斜め写真の面較正</h2>
+<p>窓・外壁区画など、実寸が分かる長方形を左上から順に指定します。同じ平面上なら四角形の外側も計測できます。</p>
+<div class="pointOrder"><span>1 左上</span><span>2 右上</span><span>3 右下</span><span>4 左下</span></div>
+<div class="field">
+<label for="planeCalibrationNameInput">実寸設定の名前</label>
+<input id="planeCalibrationNameInput" maxlength="20" placeholder="例：右側外壁"/>
+</div>
+<div class="field">
+<label for="realWidthInput">実際の横幅（m）</label>
+<input id="realWidthInput" inputmode="decimal" min="0.001" placeholder="例：9.80" step="0.01" type="number"/>
+</div>
+<div class="field">
+<label for="realHeightInput">実際の高さ（m）</label>
+<input id="realHeightInput" inputmode="decimal" min="0.001" placeholder="例：5.60" step="0.01" type="number"/>
+</div>
+<div class="sheetActions">
+<button class="ghost" data-close="perspectiveCalibrationSheet">取消</button>
+<button class="primary" id="applyPerspectiveCalibrationBtn">面較正を保存</button>
+</div>
+</div>
+</div>
+<div class="sheetBackdrop" id="categorySheet">
+<div class="sheet">
+<div class="sheetHandle"></div>
+<h2>カテゴリ追加</h2>
+<p>案件内だけで使用する分類を追加します。</p>
+<div class="field">
+<label for="categoryNameInput">カテゴリ名</label>
+<input id="categoryNameInput" maxlength="30" placeholder="例：笠木"/>
+</div>
+<div class="field">
+<label for="categoryUnitInput">単位</label>
+<select id="categoryUnitInput">
+<option value="m2">㎡（面積）</option>
+<option value="m">m（長さ）</option>
+<option value="count">箇所</option>
+</select>
+</div>
+<div class="sheetActions">
+<button class="ghost" data-close="categorySheet">取消</button>
+<button class="primary" id="addCategoryBtn">登録</button>
+</div>
+</div>
+</div>
+<div class="sheetBackdrop" id="settingsSheet">
+<div class="sheet">
+<div class="sheetHandle"></div>
+<h2 id="settingsSheetTitle">設定・診断</h2>
+<div class="field projectOnly">
+<label for="projectNameInput">案件名</label>
+<input id="projectNameInput" maxlength="60" placeholder="例：山田様邸 外装改修"/>
+</div>
+<div class="field">
+<label>データ管理</label>
+<div class="manageGrid">
+<button class="smallbtn" id="exportBackupBtn">バックアップ保存</button>
+<button class="smallbtn" id="settingsStorageBtn">保存容量確認</button>
+<button class="smallbtn" id="restoreRecoveryBtn">直前状態へ復元</button>
+<button class="smallbtn" id="verifyDataBtn">保存データ検査</button>
+<button class="smallbtn" id="deviceDiagnosticBtn">端末診断</button>
+</div>
+<div class="storageInfo" id="storageInfo">保存容量を確認できます。</div>
+<div class="storageInfo" id="deviceDiagnosticInfo">端末診断は未実施です。<br/>起動方式：ローカル／保存不安定の可能性</div>
+<button class="dangerbtn projectOnly" id="deleteProjectBtn" style="width:100%;margin-top:10px">現在の案件を削除（元に戻せません）</button>
+</div>
+<div class="sheetActions">
+<button class="ghost" data-close="settingsSheet">閉じる</button>
+<button class="primary" id="saveSettingsBtn">保存</button>
+</div>
+</div>
+</div>
+<div class="sheetBackdrop" id="imagePickerSheet">
+<div class="sheet">
+<div class="sheetHandle"></div>
+<h2>画像一覧</h2>
+<p>修正したい画像を選択してください。完了済み写真も再編集できます。</p>
+<div class="imagePickerList" id="imagePickerList"></div>
+<div class="sheetActions">
+<button class="ghost" data-close="imagePickerSheet">閉じる</button>
+<button class="primary" id="imagePickerSummaryBtn">集計を表示</button>
+</div>
+</div>
+</div>
+<div class="sheetBackdrop" id="helpSheet">
+<div class="sheet">
+<div class="sheetHandle"></div>
+<h2>使い方</h2>
+<p>画像ごとに次の3手順だけです。</p>
+<div class="helpSteps">
+<div class="helpStep"><b>ホーム画面に置く</b><br/>iPhoneのSafariでこのページを開き、共有ボタン →「ホーム画面に追加」→「追加」の順に押します。専用アイコンの「数量算出」が表示されます。</div>
+<div class="helpStep"><b>実寸設定＋自動補間</b><br/>正面は簡易較正、斜め写真は4点面較正を登録します。通常は位置に応じて適切な設定を自動選択します。</div>
+<div class="helpStep"><b>数量を描く</b><br/>項目を選びます。面積は点で囲む、長さはなぞる、箇所はタップします。</div>
+<div class="helpStep"><b>写真を完了</b><br/>計測矛盾や図形不良がある場合は完了できません。全写真の後に案件チェックを実行します。</div>
+<div class="helpStep"><b>保存と復元</b><br/>通常保存・復旧スナップショット・緊急保存で保護します。初回は「再起動後の保存確認」を完了し、案件終了時にバックアップを保存してください。</div>
+</div>
+<div class="sheetActions">
+<button class="ghost" data-close="helpSheet">閉じる</button>
+<button class="primary" data-close="helpSheet">了解</button>
+</div>
+</div>
+</div>
+<div aria-atomic="true" aria-live="polite" class="toast" id="toast" role="status"></div>
+<script src="./app-01.js"></script><script src="./app-02.js"></script><script src="./app-03.js"></script><script src="./app-04.js"></script><script src="./app-05.js"></script><script src="./app-06.js"></script><script src="./app-07.js"></script><script src="./app-08.js"></script><script src="./app-09.js"></script><script src="./app-10.js"></script><script src="./app-11.js"></script><script src="./app-12.js"></script><script src="./register-sw.js"></script></body></html>
