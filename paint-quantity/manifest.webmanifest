@@ -1,0 +1,25 @@
+{
+  "name": "塗装数量算出",
+  "short_name": "数量算出",
+  "description": "写真から塗装工事の面積・長さ・箇所を算出する現場用ツール",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#07101d",
+  "theme_color": "#0b1220",
+  "categories": [
+    "business",
+    "productivity",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
