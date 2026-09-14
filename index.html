@@ -10,15 +10,15 @@
 <meta name="theme-color" content="#173b63">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="現調台帳">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest?v=2">
+<link rel="icon" href="icons/icon-genchou-1254.png?v=1">
+<link rel="apple-touch-icon" href="icons/icon-genchou-1254.png?v=1">
 <title>現調台帳</title>
 <link rel="stylesheet" href="app.css">
 </head>
 <body class="access-locked">
 <script src="./access.js"></script>
-<header><div class="head"><h1>現調台帳</h1><select id="siteSwitcher" class="siteSwitch" aria-label="現場切替"></select><span id="saveState" class="saveState">保存準備中</span></div></header>
+<header><div class="head"><div class="appBrand"><img class="appLogo" src="icons/icon-genchou-1254.png?v=1" alt=""><h1>現調台帳</h1></div><select id="siteSwitcher" class="siteSwitch" aria-label="現場切替"></select><span id="saveState" class="saveState">保存準備中</span></div></header>
 <main>
 <section id="view-site" class="view active"><div class="guideCard noPrint"><div class="guideTitle">① 現場｜最初にここを準備</div><ol class="guideList"><li>現場名・現調日・担当者・工事場所を入力</li><li>下の「拾い項目」に測る項目名と単位を登録</li><li>準備ができたら下部の「② 実測」へ移動</li></ol><div class="guideRule">完了の目安：現場名＋拾い項目が1件以上あれば実測開始できます。</div><div id="guideSiteState" class="guideState warn">入力状況を確認中...</div></div>
   <div class="card"><h2>現場情報</h2><div class="grid">

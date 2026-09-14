@@ -4,7 +4,9 @@
   const STORAGE_KEY = "ytm_genchou_access_until";
   const ACCESS_DAYS = 30;
   const scriptUrl = document.currentScript?.src || location.href;
-  const iconUrl = new URL("./icons/icon-192.png", scriptUrl).href;
+  const isQuantityApp = location.pathname.includes("/paint-quantity/");
+  const iconPath = isQuantityApp ? "./paint-quantity/icons/icon-192.png" : "./icons/icon-genchou-1254.png?v=1";
+  const iconUrl = new URL(iconPath, scriptUrl).href;
   const escapeHtml = value => String(value || "").replace(/[&<>"']/g, char => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   })[char]);
