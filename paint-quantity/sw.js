@@ -1,7 +1,9 @@
-const CACHE_NAME = 'paint-quantity-shell-20260712-1';
+const CACHE_NAME = 'paint-quantity-shell-20260914-audit-01';
+const CACHE_PREFIX = 'paint-quantity-shell-';
 const APP_SHELL = [
   "./",
   "./index.html",
+  "../access.js",
   "./app.css",
   "./app-01.js",
   "./app-02.js",
@@ -27,7 +29,7 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
+    caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME).map(key => caches.delete(key))))
   );
   self.clients.claim();
 });

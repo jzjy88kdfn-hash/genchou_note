@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self'; manifest-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<style>body.access-locked{overflow:hidden}body.access-locked>*:not(.accessGate):not(script){visibility:hidden}</style>
 <meta name="theme-color" content="#173b63">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="現調台帳">
@@ -12,7 +16,8 @@
 <title>現調台帳</title>
 <link rel="stylesheet" href="app-final.css">
 </head>
-<body>
+<body class="access-locked">
+<script src="./access.js"></script>
 <header><div class="head"><h1>現調台帳</h1><select id="siteSwitcher" class="siteSwitch" aria-label="現場切替"></select><span id="saveState" class="saveState">保存準備中</span></div></header>
 <main>
 <section id="view-site" class="view active"><div class="guideCard noPrint"><div class="guideTitle">① 現場｜最初にここを準備</div><ol class="guideList"><li>現場名・現調日・担当者・工事場所を入力</li><li>下の「拾い項目」に測る項目名と単位を登録</li><li>準備ができたら下部の「② 実測」へ移動</li></ol><div class="guideRule">完了の目安：現場名＋拾い項目が1件以上あれば実測開始できます。</div><div id="guideSiteState" class="guideState warn">入力状況を確認中...</div></div>
