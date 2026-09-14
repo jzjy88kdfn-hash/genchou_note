@@ -18,6 +18,8 @@ self.addEventListener('fetch',event=>{
   if(request.method!=='GET')return;
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
+  const quantityPath=new URL('./paint-quantity/',self.location.href).pathname;
+  if(url.pathname.startsWith(quantityPath))return;
 
   if(request.mode==='navigate'){
     event.respondWith(fetch(request).then(response=>{
