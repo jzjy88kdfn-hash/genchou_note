@@ -1,0 +1,6 @@
+async function updateStorage(){if(!$("storageInfo"))return;const meta=new Blob([JSON.stringify(state)]).size,photoBytes=[...photoCache.values()].reduce((a,x)=>a+Math.round(((String(x).split(",")[1]||"").length*3)/4),0),total=meta+photoBytes;let t=`現場 ${state.sites.length}件・実測 ${state.sites.reduce((a,s)=>a+s.entries.length,0)}件・面写真 ${state.sites.reduce((a,s)=>a+s.surfaces.filter(sf=>sf.photoRef).length,0)}枚・約 ${(total/1024/1024).toFixed(1)}MB`;if(navigator.storage?.estimate)try{const e=await navigator.storage.estimate();if(e.quota)t+=`／端末割当 ${(e.usage/e.quota*100).toFixed(1)}%`}catch{}t+=`／更新番号 ${BUILD_ID}`;$("storageInfo").textContent=t}
+
+function renderAll(){renderSiteSwitcher();syncSiteToUi();renderItems();renderMeasureHome();renderResults();updateStorage()}
+async function deleteCurrentSite(){if(state.sites.length<=1)return alert("最後の1現場は削除できません。");const s=currentSite();if(!confirm(`「${s.name||"名称未入力"}」を削除しますか？`))return;state.sites=state.sites.filter(x=>x.id!==s.id);state.currentSiteId=state.sites[0].id;await saveNow();await cleanupPhotos();renderAll()}
+async function resetAll(){if(!confirm("端末内の全現場を初期化します。バックアップがない場合は戻せません。"))return;await idbClear(PHOTO_STORE);photoCache.clear();state=normalize({sites:[newSite()]});await saveNow();renderAll()}
+
