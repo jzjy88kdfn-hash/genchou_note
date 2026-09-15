@@ -1,6 +1,7 @@
 "use strict";
 const CACHE="genchou-note-v9-20260916-release-01";
 const PREFIX="genchou-note-";
+const LEGACY_PREFIX="field-survey-ledger-";
 const CORE=[
   "./",
   "./index.html",
@@ -25,7 +26,7 @@ self.addEventListener("install",event=>{
 });
 self.addEventListener("activate",event=>{
   event.waitUntil(caches.keys().then(keys=>Promise.all(
-    keys.filter(k=>k.startsWith(PREFIX)&&k!==CACHE).map(k=>caches.delete(k))
+    keys.filter(k=>(k.startsWith(PREFIX)||k.startsWith(LEGACY_PREFIX))&&k!==CACHE).map(k=>caches.delete(k))
   )).then(()=>self.clients.claim()));
 });
 self.addEventListener("fetch",event=>{
@@ -39,10 +40,10 @@ self.addEventListener("fetch",event=>{
     event.respondWith(fetch(req).then(async fresh=>{
       if(fresh&&fresh.ok){const c=await caches.open(CACHE);c.put("./index.html",fresh.clone()).catch(()=>{});}
       return fresh;
-    }).catch(()=>caches.match("./index.html")));
+    }).catch(()=>caches.open(CACHE).then(c=>c.match("./index.html"))));
     return;
   }
-  event.respondWith(caches.match(req,{ignoreSearch:true}).then(cached=>cached||fetch(req).then(async fresh=>{
+  event.respondWith(caches.open(CACHE).then(c=>c.match(req,{ignoreSearch:true})).then(cached=>cached||fetch(req).then(async fresh=>{
     if(fresh&&fresh.ok){const c=await caches.open(CACHE);c.put(req,fresh.clone()).catch(()=>{});}
     return fresh;
   })));
