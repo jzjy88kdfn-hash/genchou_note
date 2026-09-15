@@ -1,6 +1,6 @@
-const CACHE='field-survey-ledger-20260914-brand-02';
+const CACHE='field-survey-ledger-20260915-negative-03';
 const PREFIX='field-survey-ledger-';
-const ASSETS=['./','./index.html','./access.js','./app.css','./app-core.js','./app-ui.js','./app-io.js','./manifest.webmanifest?v=2','./icons/icon-genchou-1254.png?v=1'];
+const ASSETS=['./','./index.html','./access.js','./app.css?v=3','./app-core.js','./app-ui.js?v=3','./app-io.js','./manifest.webmanifest?v=2','./icons/icon-genchou-1254.png?v=1'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));
