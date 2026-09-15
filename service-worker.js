@@ -1,36 +1,49 @@
-const CACHE='field-survey-ledger-20260915-negative-03';
-const PREFIX='field-survey-ledger-';
-const ASSETS=['./','./index.html','./access.js','./app.css?v=3','./app-core.js','./app-ui.js?v=3','./app-io.js','./manifest.webmanifest?v=2','./icons/icon-genchou-1254.png?v=1'];
-
-self.addEventListener('install',event=>{
-  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));
-  self.skipWaiting();
+"use strict";
+const CACHE="genchou-note-v9-20260916-release-01";
+const PREFIX="genchou-note-";
+const CORE=[
+  "./",
+  "./index.html",
+  "./app-next.css?v=5",
+  "./app-next-01.js?v=5",
+  "./app-next-02.js?v=5",
+  "./app-next-03a1.js?v=5",
+  "./app-next-03a2a.js?v=5",
+  "./app-next-03a2b.js?v=5",
+  "./app-next-03b.js?v=5",
+  "./app-next-03c.js?v=5",
+  "./app-next-04a1.js?v=5",
+  "./app-next-04a2.js?v=5",
+  "./app-next-04b1.js?v=5",
+  "./app-next-04b2.js?v=5",
+  "./access.js",
+  "./manifest.webmanifest?v=7",
+  "./icons/icon-genchou-1254.png?v=1"
+];
+self.addEventListener("install",event=>{
+  event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()));
 });
-
-self.addEventListener('activate',event=>{
+self.addEventListener("activate",event=>{
   event.waitUntil(caches.keys().then(keys=>Promise.all(
-    keys.filter(key=>key.startsWith(PREFIX)&&key!==CACHE).map(key=>caches.delete(key))
+    keys.filter(k=>k.startsWith(PREFIX)&&k!==CACHE).map(k=>caches.delete(k))
   )).then(()=>self.clients.claim()));
 });
-
-self.addEventListener('fetch',event=>{
-  const request=event.request;
-  if(request.method!=='GET')return;
-  const url=new URL(request.url);
+self.addEventListener("fetch",event=>{
+  const req=event.request;
+  if(req.method!=="GET")return;
+  const url=new URL(req.url);
   if(url.origin!==self.location.origin)return;
-  const quantityPath=new URL('./paint-quantity/',self.location.href).pathname;
+  const quantityPath=new URL("./paint-quantity/",self.location.href).pathname;
   if(url.pathname.startsWith(quantityPath))return;
-
-  if(request.mode==='navigate'){
-    event.respondWith(fetch(request).then(response=>{
-      if(response.ok)caches.open(CACHE).then(cache=>cache.put('./index.html',response.clone()));
-      return response;
-    }).catch(()=>caches.match('./index.html')));
+  if(req.mode==="navigate"){
+    event.respondWith(fetch(req).then(async fresh=>{
+      if(fresh&&fresh.ok){const c=await caches.open(CACHE);c.put("./index.html",fresh.clone()).catch(()=>{});}
+      return fresh;
+    }).catch(()=>caches.match("./index.html")));
     return;
   }
-
-  event.respondWith(caches.match(request).then(cached=>cached||fetch(request).then(response=>{
-    if(response.ok)caches.open(CACHE).then(cache=>cache.put(request,response.clone()));
-    return response;
+  event.respondWith(caches.match(req,{ignoreSearch:true}).then(cached=>cached||fetch(req).then(async fresh=>{
+    if(fresh&&fresh.ok){const c=await caches.open(CACHE);c.put(req,fresh.clone()).catch(()=>{});}
+    return fresh;
   })));
 });
