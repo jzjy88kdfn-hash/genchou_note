@@ -2,7 +2,7 @@
   "id": "./index.html",
   "name": "現調台帳",
   "short_name": "現調台帳",
-  "description": "現場情報、実測数量、写真、集計、CSV・PDF・バックアップを一体管理する現調台帳。",
+  "description": "面ごとの全景写真、実寸較正、点・線・囲み、数量、写真実測図を一体管理する現調台帳。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
