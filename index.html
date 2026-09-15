@@ -9,55 +9,156 @@
 <style>body.access-locked{overflow:hidden}body.access-locked>*:not(.accessGate):not(script){visibility:hidden}</style>
 <meta name="theme-color" content="#173b63">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="現調台帳">
-<link rel="manifest" href="manifest.webmanifest?v=2">
+<link rel="manifest" href="manifest.webmanifest?v=7">
 <link rel="icon" href="icons/icon-genchou-1254.png?v=1">
 <link rel="apple-touch-icon" href="icons/icon-genchou-1254.png?v=1">
 <title>現調台帳</title>
-<link rel="stylesheet" href="app.css?v=3">
+<link rel="stylesheet" href="app-next.css?v=5">
 </head>
 <body class="access-locked">
 <script src="./access.js"></script>
-<header><div class="head"><div class="appBrand"><img class="appLogo" src="icons/icon-genchou-1254.png?v=1" alt=""><h1>現調台帳</h1></div><select id="siteSwitcher" class="siteSwitch" aria-label="現場切替"></select><span id="saveState" class="saveState">保存準備中</span></div></header>
+<header class="topbar">
+  <div class="brand"><img src="icons/icon-genchou-1254.png?v=1" alt=""><strong>現調台帳</strong></div>
+  <select id="siteSwitcher" aria-label="現場切替"></select>
+  <span id="saveState">保存準備中</span>
+</header>
 <main>
-<section id="view-site" class="view active"><div class="guideCard noPrint"><div class="guideTitle">① 現場｜最初にここを準備</div><ol class="guideList"><li>現場名・現調日・担当者・工事場所を入力</li><li>下の「拾い項目」に測る項目名と単位を登録</li><li>準備ができたら下部の「② 実測」へ移動</li></ol><div class="guideRule">完了の目安：現場名＋拾い項目が1件以上あれば実測開始できます。</div><div id="guideSiteState" class="guideState warn">入力状況を確認中...</div></div>
-  <div class="card"><h2>現場情報</h2><div class="grid">
-    <div><label>現場名</label><input id="siteName" placeholder="例：〇〇様邸 外壁改修"></div>
-    <div><label>現調日</label><input id="siteDate" type="date"></div>
-    <div><label>担当者</label><input id="siteStaff" placeholder="担当者名"></div>
-    <div><label>住所・工事場所</label><input id="siteAddress" placeholder="住所"></div>
-    <div class="full"><label>現場メモ</label><textarea id="siteMemo" placeholder="駐車位置、注意点、顧客要望など"></textarea></div>
-  </div></div>
-  <div class="card"><h2>拾い項目</h2><div class="info">表へ直接入力します。不要な項目は項目名を空欄にしてください。末尾へ入力すると次の空行が自動追加されます。</div><div class="sheetFrame"><div id="itemTable" class="sheetTable"></div></div></div>
-  <details class="noPrint"><summary>危険な操作</summary><div class="detailsBody"><div class="info">上部の「現場切替」で削除したい保存現場を選び、このボタンから削除します。</div><button id="deleteSiteButton" class="danger">現在の選択現場を削除</button><div id="deleteSiteHint" class="deleteHint" aria-live="polite"></div></div></details>
+<section id="view-site" class="view active">
+  <div class="card">
+    <h2>現場情報</h2>
+    <div class="formGrid">
+      <label>現場名<input id="siteName" placeholder="例：〇〇様邸"></label>
+      <label>現調日<input id="siteDate" type="date"></label>
+      <label>担当者<input id="siteStaff" placeholder="担当者名"></label>
+      <label>工事場所<input id="siteAddress" placeholder="住所"></label>
+      <label class="wide">現場メモ<textarea id="siteMemo" placeholder="顧客要望・駐車・注意事項など"></textarea></label>
+    </div>
+  </div>
+  <div class="card">
+    <div class="sectionHead"><h2>測定項目</h2><button id="addItemButton" class="small">＋追加</button></div>
+    <div id="itemList" class="itemList"></div>
+    <p class="hint">項目名・単位だけ決めれば開始できます。項目は現場ごとに必要なものだけ登録します。</p>
+  </div>
+  <details class="dangerZone"><summary>現場管理</summary><div><button id="newSiteButton">＋ 新しい現場</button><button id="deleteSiteButton" class="danger">現在の現場を削除</button></div></details>
 </section>
-<section id="view-measure" class="view"><div class="guideCard noPrint"><div class="guideTitle">② 実測｜現場で数量を入れる</div><ol class="guideList"><li>測る項目を選択</li><li>マイナスで測るときだけ「マイナス値で登録」に✅。寸法は通常と同じ正の数で入力</li><li>「今回数量」と算定式を確認して「実測を登録」</li></ol><div class="guideRule">同じ項目を続けて測る場合は、そのまま寸法だけ入れ直して登録します。</div><div id="guideMeasureState" class="guideState warn">実測状況を確認中...</div></div>
-  <div class="card"><h2>実測登録</h2><div id="measureBox" class="measureBox">
-    <div class="grid"><div><label>項目</label><select id="measureItem"></select></div><div><label>単位</label><input id="measureUnit" readonly></div></div>
-    <div class="negativeToggle"><input id="negativeEntry" type="checkbox"><label for="negativeEntry"><b>マイナス値で登録</b><span class="subnote">ここだけ✅。寸法・同寸法数・控除は通常の実測と同じ入力です。計算結果だけがマイナスになります。</span></label></div>
-    <div id="areaFields" class="grid3 hidden"><div><label>計算方法</label><select id="areaMode"><option value="flat">縦 × 横</option><option value="floor">長さ × 奥行き</option><option value="around">四周 × 高さ</option></select></div><div><label id="aLabel">縦・高さ（m）</label><input id="areaA" type="number" step="0.001" inputmode="decimal"></div><div><label id="bLabel">横・幅（m）</label><input id="areaB" type="number" step="0.001" inputmode="decimal"></div><div id="cField" class="hidden"><label id="cLabel">高さ（m）</label><input id="areaC" type="number" step="0.001" inputmode="decimal"></div><div><label>同寸法数</label><input id="areaCount" type="number" min="1" step="1" value="1"></div><div><label>控除合計（㎡）</label><input id="areaDeduct" type="number" min="0" step="0.001" value="0"></div></div>
-    <div id="lengthFields" class="grid3 hidden"><div><label>長さ（m）</label><input id="lengthValue" type="number" step="0.001" inputmode="decimal"></div><div><label>同寸法数</label><input id="lengthCount" type="number" min="1" step="1" value="1"></div><div><label>控除合計（m）</label><input id="lengthDeduct" type="number" min="0" step="0.001" value="0"></div></div>
-    <div id="qtyFields" class="grid hidden"><div><label>数量</label><input id="qtyValue" type="number" step="0.001" value="1"></div></div>
-    <div class="grid"><div><label>実測メモ</label><textarea id="entryMemo" placeholder="測定根拠、控除内容、再確認事項"></textarea></div><div><label>写真（任意・最大6枚）</label><input id="entryPhotos" type="file" accept="image/*" capture="environment" multiple><div id="photoPreview" class="photoPreview"></div></div></div>
-    <div id="calcPanel" class="calcPanel"><div class="info">今回数量</div><span id="liveQty" class="calcValue">0.000</span> <b id="liveUnit"></b><div id="liveFormula" class="info"></div></div>
-  </div></div>
-  <div class="mainAction"><button id="registerEntryButton" class="primary">実測を登録</button></div>
-  <div class="card"><h2>実測履歴</h2><div class="sheetFrame"><div id="entryTable" class="sheetTable"></div></div></div>
+
+<section id="view-measure" class="view">
+  <div id="surfaceEmpty" class="surfaceEmpty">
+    <div class="card heroCard">
+      <h2>面ごとに開始</h2>
+      <p>その面で測る項目を選び、全景を1回撮影。以後は同じ写真を使います。</p>
+      <button id="startSurfaceButton" class="primary big">この面を開始</button>
+      <button id="resumeSurfaceButton" class="hidden">未完了の面を再開</button>
+    </div>
+    <div id="surfaceHistory" class="surfaceHistory"></div>
+  </div>
+
+  <div id="surfaceWork" class="hidden">
+    <div class="workTop">
+      <div><b id="surfaceLabel">面 1</b><span id="surfaceStatus" class="pill"></span></div>
+      <div class="workTopActions"><button id="editSurfaceItemsButton" class="small">項目</button><button id="showSavedButton" class="small">登録済み表示</button></div>
+    </div>
+
+    <div id="setupPanel" class="card setupPanel">
+      <div id="stepItems" class="setupStep">
+        <h2>① この面で測る項目</h2>
+        <div id="surfaceItemPicker" class="chipGrid"></div>
+        <button id="confirmSurfaceItems" class="primary">項目を確定</button>
+      </div>
+      <div id="stepPhoto" class="setupStep hidden">
+        <h2>② 全景写真</h2>
+        <p class="hint">建物面ができるだけ正面に近く、全体が入る位置から撮影。</p>
+        <button id="captureBaseButton" class="primary">全景を撮影</button>
+        <input id="basePhotoInput" class="hidden" type="file" accept="image/*" capture="environment">
+      </div>
+      <div id="stepCalibration" class="setupStep hidden">
+        <h2>③ 較正</h2>
+        <div class="inlineForm"><label>実寸（m）<input id="calibrationValue" inputmode="decimal" type="number" step="0.001" placeholder="例 8.600"></label><button id="startCalibrationButton" class="primary">線を引く</button></div>
+        <button id="skipCalibrationButton" class="textButton">時間がないため較正なしで進む</button>
+      </div>
+    </div>
+
+    <div id="editorPanel" class="hidden">
+      <div id="photoCard" class="photoCard">
+        <div id="photoStage" class="photoStage">
+          <img id="basePhoto" alt="基準写真">
+          <svg id="annotationSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+          <div id="magnifier" class="magnifier hidden"></div>
+        </div>
+        <div class="editorBar">
+          <button id="undoPointButton" aria-label="一つ戻す">↩︎ 戻す</button>
+          <span id="drawGuide">項目を選択してください</span>
+          <button id="closePolygonButton" class="hidden">囲み確定</button>
+        </div>
+      </div>
+
+      <div class="itemRailWrap"><div id="itemRail" class="itemRail"></div></div>
+
+      <div id="measureCard" class="card measureCard">
+        <div class="measureHeader"><div><b id="activeItemName">項目未選択</b><span id="activeItemUnit"></span></div><select id="shapeMode" aria-label="図形"><option value="auto">自動</option><option value="line">線</option><option value="quad">四角囲み</option><option value="polygon">ポリゴン</option><option value="point">点</option></select></div>
+
+        <div id="areaInput" class="measureInput hidden">
+          <div class="modeTabs"><button data-area-mode="rect" class="active">縦×横</button><button data-area-mode="beam">梁3面</button><button data-area-mode="direct">数量直接</button></div>
+          <div id="rectFields" class="inputGrid"><label>縦・高さ（m）<input id="areaH" type="number" step="0.001" inputmode="decimal"></label><label>横・幅（m）<input id="areaW" type="number" step="0.001" inputmode="decimal"></label><label>同寸法数<input id="areaCount" type="number" min="1" step="1" value="1"></label></div>
+          <div id="beamFields" class="hidden">
+            <div class="inputGrid"><label>梁成（m）<input id="beamH" type="number" step="0.001" inputmode="decimal"></label><label>梁幅（m）<input id="beamW" type="number" step="0.001" inputmode="decimal"></label><label>長さ（m）<input id="beamLength" type="number" step="0.001" inputmode="decimal"></label></div>
+            <div class="beamActions"><button id="beamPlusButton">＋ 長さ追加</button><button id="beamMinusButton">－ 長さ控除</button><button id="beamClearButton" class="small">クリア</button></div>
+            <div id="beamSegments" class="segmentList"></div>
+            <label class="lockCheck"><input id="beamLockSection" type="checkbox" checked> 梁成・梁幅を登録後も固定</label>
+          </div>
+          <div id="directAreaFields" class="hidden"><label>数量（㎡）<input id="directAreaQty" type="number" step="0.001" inputmode="decimal"></label></div>
+        </div>
+
+        <div id="lengthInput" class="measureInput hidden">
+          <div class="inputGrid"><label>長さ（m）<input id="lengthValue" type="number" step="0.001" inputmode="decimal"></label><label>同寸法数<input id="lengthCount" type="number" min="1" step="1" value="1"></label></div>
+        </div>
+        <div id="qtyInput" class="measureInput hidden"><label>数量<input id="qtyValue" type="number" step="0.001" inputmode="decimal" value="1"></label></div>
+
+        <details class="exceptionBox"><summary>例外処理</summary><div class="exceptionInner"><label class="toggle"><input id="negativeEntry" type="checkbox"> この測定だけマイナス数量</label><label>補足メモ（必要な時だけ）<textarea id="entryMemo" placeholder="図形で伝わらない事情だけ"></textarea></label></div></details>
+
+        <div class="liveBox"><span>今回数量</span><strong id="liveQty">0.000</strong><b id="liveUnit"></b><small id="liveFormula"></small></div>
+      </div>
+
+      <div class="stickyActions">
+        <button id="undoActionButton">↩︎</button>
+        <button id="registerEntryButton" class="primary">登録して次へ</button>
+        <button id="finishSurfaceButtonBottom">面完了</button>
+      </div>
+
+      <div class="card compact"><div class="sectionHead"><h2>この面の登録</h2><span id="surfaceEntryCount" class="pill"></span></div><div id="entryList"></div></div>
+    </div>
+  </div>
 </section>
-<section id="view-result" class="view"><div class="guideCard noPrint"><div class="guideTitle">③ 集計｜数量を確認して出力</div><ol class="guideList"><li>項目別合計と実測件数を確認</li><li>数量がおかしい場合は「② 実測」に戻り履歴を確認・修正</li><li>問題なければ「出力」からPDF・CSV・コピーを選択</li></ol><div class="guideRule">PDF/CSVは未入力や不正数量があると停止します。警告を直してから出力してください。</div><div id="guideResultState" class="guideState warn">集計状況を確認中...</div></div>
-  <div class="printOnly"><h1 class="printTitle">現調数量集計表</h1><table class="printMeta"><tr><th>現場名</th><td id="printSiteName"></td><th>現調日</th><td id="printSiteDate"></td></tr><tr><th>工事場所</th><td id="printAddress"></td><th>担当者</th><td id="printStaff"></td></tr></table></div>
-  <div class="card"><h2>項目別集計</h2><div id="resultStatus" class="status"></div><div class="sheetFrame" style="margin-top:9px"><div id="resultTable"></div></div></div>
-  <div class="mainAction screenOnly"><button id="outputButton" class="primary">出力</button></div>
-  <div class="printOnly printBreak"><h2>実測明細</h2><div id="printDetails"></div></div>
+
+<section id="view-result" class="view">
+  <div class="printOnly"><h1>現調数量集計表</h1><div id="printModeLabel" class="printModeLabel"></div><table class="printMeta"><tr><th>現場名</th><td id="printSiteName"></td><th>現調日</th><td id="printSiteDate"></td></tr><tr><th>工事場所</th><td id="printAddress"></td><th>担当者</th><td id="printStaff"></td></tr></table></div>
+  <div class="card"><div class="sectionHead"><h2>項目別集計</h2><span id="resultStatus" class="pill"></span></div><div id="resultTable" class="resultTable"></div></div>
+  <div class="card"><h2>面別実測記録</h2><div id="surfaceEvidence"></div></div>
+  <div class="card"><h2>実測明細</h2><div id="entryTable" class="entryTable"></div></div>
+  <section id="drawingPrint" class="drawingPrint printOnly" aria-label="現地調査 実測図"></section>
+  <button id="outputButton" class="primary big screenOnly">PDF・出力</button>
 </section>
-<section id="view-save" class="view"><div class="guideCard noPrint"><div class="guideTitle">④ 保存｜普段は自動、区切りでバックアップ</div><ol class="guideList"><li>通常の入力は自動保存なので操作不要</li><li>現調完了時・端末変更前・大きな修正前に「バックアップ」</li><li>別端末や復旧時だけ「バックアップを復元」を使用</li></ol><div class="guideRule">迷ったら、下部の番号順に戻れば作業を再開できます。</div><div id="guideSaveState" class="guideState">保存状態を確認中...</div></div>
-  <div class="card"><h2>保存・復元</h2><div class="info">入力内容は自動保存されます。案件完了時または端末変更前にバックアップしてください。</div><div style="display:grid;gap:9px;margin-top:12px"><button id="backupButton" class="primary">バックアップ</button><button id="importButton">バックアップを復元</button><input id="importFile" class="hidden" type="file" accept="application/json"></div></div>
-  <div class="card"><h2>端末状態</h2><div id="storageInfo" class="info">確認中...</div></div>
-  <details><summary>危険な操作</summary><div class="detailsBody"><button id="resetAllButton" class="danger">この端末の全現場データを初期化</button></div></details>
+
+<section id="view-save" class="view">
+  <div class="card"><h2>保存・復元</h2><p class="hint">入力は端末内へ自動保存。現調完了時にバックアップしてください。</p><button id="backupButton" class="primary">バックアップ</button><button id="importButton">バックアップを復元</button><input id="importFile" class="hidden" type="file" accept="application/json"></div>
+  <div class="card"><h2>端末状態</h2><div id="storageInfo" class="hint">確認中</div></div>
+  <details class="dangerZone"><summary>危険な操作</summary><div><button id="resetAllButton" class="danger">この端末の全現場を初期化</button></div></details>
 </section>
 </main>
-<nav class="bottomNav"><button class="active" data-view="site">① 現場</button><button data-view="measure">② 実測</button><button data-view="result">③ 集計</button><button data-view="save">④ 保存</button></nav>
+<nav class="bottomNav"><button class="active" data-view="site">現場</button><button data-view="measure">実測</button><button data-view="result">集計</button><button data-view="save">保存</button></nav>
 <div id="sheetRoot"></div>
-<script src="app-core.js"></script>
-<script src="app-ui.js?v=3"></script>
-<script src="app-io.js"></script></body></html>
+<script src="app-next-01.js?v=5"></script>
+<script src="app-next-02.js?v=5"></script>
+<script src="app-next-03a1.js?v=5"></script>
+<script src="app-next-03a2a.js?v=5"></script>
+<script src="app-next-03a2b.js?v=5"></script>
+<script src="app-next-03b.js?v=5"></script>
+<script src="app-next-03c.js?v=5"></script>
+<script src="app-next-04a1.js?v=5"></script>
+<script src="app-next-04a2.js?v=5"></script>
+<script src="app-next-04b1.js?v=5"></script>
+<script src="app-next-04b2.js?v=5"></script>
+</body>
+</html>
